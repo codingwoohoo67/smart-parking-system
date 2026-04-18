@@ -1,0 +1,58 @@
+import { createFileRoute } from "@tanstack/react-router";
+import { toast } from "sonner";
+import { Scanner } from "@/components/Scanner";
+import { HistoryList } from "@/components/HistoryList";
+import { StatsBar } from "@/components/StatsBar";
+import { useParking } from "@/hooks/use-parking";
+import { useSound } from "@/hooks/use-sound";
+
+export const Route = createFileRoute("/entry")({
+  head: () => ({
+    meta: [
+      { title: "Entry / Exit · Smart VIT Parking" },
+      { name: "description", content: "Scan or enter a student/faculty ID with vehicle number to assign a slot or mark an exit." },
+    ],
+  }),
+  component: EntryExitPage,
+});
+
+function EntryExitPage() {
+  const { records, scan } = useParking();
+  const { play } = useSound();
+
+  function handleScan(raw: string, vehicleNumber: string) {
+    const result = scan(raw, vehicleNumber);
+    switch (result.type) {
+      case "entry":
+        toast.success(result.message);
+        play("entry");
+        break;
+      case "exit":
+        toast(result.message, { icon: "👋" });
+        play("exit");
+        break;
+      case "duplicate":
+        toast.error(result.message);
+        play("error");
+        break;
+      case "full":
+        toast.error(result.message);
+        play("error");
+        break;
+      case "invalid":
+        toast.error(result.message);
+        play("error");
+        break;
+    }
+  }
+
+  return (
+    <>
+      <StatsBar records={records} />
+      <div className="grid gap-6 lg:grid-cols-[minmax(0,1fr)_minmax(0,1fr)]">
+        <Scanner onScan={handleScan} />
+        <HistoryList records={records} />
+      </div>
+    </>
+  );
+}
